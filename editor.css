@@ -81,3 +81,7 @@
   .ed-status { gap: 2px 12px; }
   .ed-btn, .ed-seg button { min-height: 34px; padding: 6px 9px; }
 }
+
+.ed-group { display: inline-flex; gap: 4px; }
+.ed-group .ed-btn { min-width: 38px; }
+.editing:not(.ed-move) .ed-selected { outline-color: #9a6630 !important; }

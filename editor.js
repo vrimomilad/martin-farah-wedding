@@ -55,18 +55,40 @@
     else el.style.translate = `${x}cqw ${y}cqw`;
   };
 
-  const snapshot = () => items.map((el) => [isText(el) ? el.innerHTML : null, el.style.translate || ""]);
+  const getScale = (el) => parseFloat(el.style.scale) || 1;
+  const setScale = (el, s) => {
+    s = Math.round(Math.min(3, Math.max(0.4, s)) * 100) / 100;
+    if (s === 1) el.style.removeProperty("scale"); else el.style.scale = String(s);
+  };
+
+  const snapshot = () => items.map((el) => [isText(el) ? el.innerHTML : null, el.style.translate || "", el.style.scale || ""]);
   const restore = (snap) => items.forEach((el, i) => {
     if (snap[i][0] !== null) el.innerHTML = snap[i][0];
     if (snap[i][1]) el.style.translate = snap[i][1]; else el.style.removeProperty("translate");
+    if (snap[i][2]) el.style.scale = snap[i][2]; else el.style.removeProperty("scale");
   });
-  const signature = () => items.map((el) => (isText(el) ? norm(cleanHTML(el)) : "") + "|" + (el.style.translate || "")).join("\n");
+  const signature = () => items.map((el) => (isText(el) ? norm(cleanHTML(el)) : "") + "|" + (el.style.translate || "") + "|" + (el.style.scale || "")).join("\n");
 
   // What GitHub currently has (as far as this page knows); updated after each publish
-  let baselineText = items.map((el) => (isText(el) ? norm(cleanHTML(el)) : null));
+  let baselineSnap = snapshot();
   let publishedSig = signature();
   const history = [];
   const pushHistory = (snap) => { history.push(snap); if (history.length > 200) history.shift(); refresh(); };
+
+  // Unpublished edits are kept on this device, so closing the tab never loses work
+  const DRAFT_KEY = "mf-editor-draft";
+  let restoredDraft = false;
+  try {
+    const draft = JSON.parse(localStorage.getItem(DRAFT_KEY) || "null");
+    if (draft && draft.base === publishedSig && draft.snap.length === items.length) { restore(draft.snap); restoredDraft = true; }
+    else localStorage.removeItem(DRAFT_KEY);
+  } catch (_) {}
+  const saveDraft = () => {
+    try {
+      if (signature() === publishedSig) localStorage.removeItem(DRAFT_KEY);
+      else localStorage.setItem(DRAFT_KEY, JSON.stringify({ base: publishedSig, snap: snapshot() }));
+    } catch (_) {}
+  };
 
   // ───────────── Toolbar ─────────────
   const bar = document.createElement("div");
@@ -77,12 +99,18 @@
         <button type="button" data-mode="text" aria-pressed="true">Edit text</button>
         <button type="button" data-mode="move" aria-pressed="false">Move</button>
       </div>
-      <button type="button" class="ed-btn" data-act="undo" title="Undo (Ctrl+Z)">Undo</button>
+      <button type="button" class="ed-btn" data-act="undo" title="Undo (Ctrl+Z)">↶ Undo</button>
+      <span class="ed-group" aria-label="Selected item">
+        <button type="button" class="ed-btn ed-sel" data-act="smaller" title="Make the selected item smaller">A−</button>
+        <button type="button" class="ed-btn ed-sel" data-act="bigger" title="Make the selected item bigger">A+</button>
+        <button type="button" class="ed-btn ed-sel ed-text-only" data-act="bold" title="Bold (select words first, or applies to the whole line)"><b>B</b></button>
+        <button type="button" class="ed-btn ed-sel ed-text-only" data-act="italic" title="Italic"><i>I</i></button>
+      </span>
       <button type="button" class="ed-btn ed-move-only" data-act="parent" title="Select the group this item belongs to">Select group</button>
-      <button type="button" class="ed-btn ed-move-only" data-act="reset" title="Put this item back where it started">Reset position</button>
+      <button type="button" class="ed-btn ed-sel" data-act="reset" title="Put this item back to its original place and size">Reset item</button>
       <button type="button" class="ed-btn" data-act="thanks">Show thank-you</button>
       <span class="ed-spacer"></span>
-      <button type="button" class="ed-btn ed-primary" data-act="publish">Publish</button>
+      <button type="button" class="ed-btn ed-primary" data-act="publish">Save &amp; publish</button>
       <button type="button" class="ed-btn" data-act="exit">Exit</button>
     </div>
     <div class="ed-row ed-status">
@@ -104,16 +132,44 @@
     bar.classList.toggle("is-move", mode === "move");
     document.documentElement.classList.toggle("ed-move", mode === "move");
     tip.textContent = mode === "text"
-      ? "Click any text to change it. Enter starts a new line."
+      ? "Click any text to type. Select words, then B / I. A− / A+ resize."
       : selected
-        ? `Drag to move. Arrow keys nudge (Shift = bigger steps). Snaps to centre.`
-        : "Click an item to select it, then drag it.";
+        ? "Drag to move. Arrow keys nudge (Shift = bigger steps). Snaps to centre."
+        : "Click an item, then drag it.";
     bar.querySelector('[data-act="undo"]').disabled = history.length === 0;
     bar.querySelector('[data-act="parent"]').disabled = !selected || !parentItem(selected);
-    bar.querySelector('[data-act="reset"]').disabled = !selected || !selected.style.translate;
+    bar.querySelectorAll(".ed-sel").forEach((b) => { b.disabled = !selected; });
+    if (selected) bar.querySelector('[data-act="reset"]').disabled = !selected.style.translate && !selected.style.scale;
+    bar.querySelectorAll(".ed-text-only").forEach((b) => { b.disabled = !selected || mode !== "text" || !isText(selected); });
     const changed = signature() !== publishedSig;
-    dirty.textContent = changed ? "Unpublished changes" : "All changes published";
+    dirty.textContent = changed
+      ? (restoredDraft ? "Unsaved changes (restored from last time)" : "Unsaved changes — press Save & publish")
+      : "Everything is saved";
     dirty.classList.toggle("is-dirty", changed);
+    saveDraft();
+  }
+
+  // Toolbar buttons must not steal focus/selection from the text being edited
+  bar.addEventListener("mousedown", (e) => { if (e.target.closest(".ed-sel, [data-act=undo]")) e.preventDefault(); });
+
+  function resize(factor) {
+    if (!selected) return;
+    pushHistory(snapshot());
+    setScale(selected, getScale(selected) * factor);
+    afterChange();
+  }
+  function format(cmd) {
+    if (!selected || !isText(selected)) return;
+    const sel = getSelection();
+    const inside = sel.rangeCount && selected.contains(sel.getRangeAt(0).commonAncestorContainer) && !sel.isCollapsed;
+    pushHistory(snapshot());
+    if (!inside) { // nothing highlighted: apply to the whole line
+      selected.focus();
+      const r = document.createRange(); r.selectNodeContents(selected);
+      sel.removeAllRanges(); sel.addRange(r);
+    }
+    document.execCommand(cmd);
+    afterChange();
   }
 
   function setMode(next) {
@@ -141,12 +197,17 @@
     switch (b.dataset.act) {
       case "undo": return undo();
       case "parent": { const p = selected && parentItem(selected); if (p) select(p); return; }
-      case "reset": if (selected) { pushHistory(snapshot()); selected.style.removeProperty("translate"); afterChange(); } return;
+      case "reset": if (selected) { pushHistory(snapshot()); selected.style.removeProperty("translate"); selected.style.removeProperty("scale"); afterChange(); } return;
+      case "bigger": return resize(1.08);
+      case "smaller": return resize(1 / 1.08);
+      case "bold": return format("bold");
+      case "italic": return format("italic");
       case "thanks": return toggleThanks(b);
       case "publish": return publish();
       case "exit":
         if (signature() !== publishedSig && !confirm("You have unpublished changes. Leave without publishing?")) return;
         history.length = 0; publishedSig = signature();
+        try { localStorage.removeItem(DRAFT_KEY); } catch (_) {}
         location.hash = ""; location.reload();
     }
   });
@@ -182,7 +243,8 @@
   // ───────────── Text editing ─────────────
   let textBefore = null;
   cards.addEventListener("focusin", (e) => {
-    if (mode === "text" && e.target.closest("[data-edit]")) textBefore = snapshot();
+    const el = mode === "text" && e.target.closest("[data-edit]");
+    if (el) { textBefore = snapshot(); if (el !== selected) select(el); }
   });
   cards.addEventListener("focusout", (e) => {
     if (mode !== "text" || !textBefore) return;
@@ -428,17 +490,19 @@
       const file = await gh(token, "GET");
       const doc = new DOMParser().parseFromString(b64ToText(file.content), "text/html");
       const srcItems = [...doc.querySelectorAll("[data-edit],[data-move]")];
-      const outOfDate = srcItems.length !== items.length ||
-        items.some((el, i) => isText(el) && (!srcItems[i].hasAttribute("data-edit") || norm(srcItems[i].innerHTML) !== baselineText[i]));
-      if (outOfDate) {
-        throw Object.assign(new Error("stale"), { userMessage: "The website was changed somewhere else since you opened the editor. Copy any text you want to keep, reload this page, and make your edits again." });
+      const sameLayout = srcItems.length === items.length &&
+        items.every((el, i) => isText(el) === srcItems[i].hasAttribute("data-edit") && el.tagName === srcItems[i].tagName);
+      if (!sameLayout) {
+        throw Object.assign(new Error("stale"), { userMessage: "The website's layout was updated since this page loaded. Your changes are saved on this device — just refresh the page and press Save & publish again." });
       }
+      // Write only what was changed here, so edits published from another device are kept
+      const now = snapshot();
       items.forEach((el, i) => {
-        const src = srcItems[i];
-        if (isText(el)) src.innerHTML = cleanHTML(el);
-        if (el.style.translate) src.style.translate = el.style.translate;
-        else src.style.removeProperty("translate");
-        if (!src.getAttribute("style")) src.removeAttribute("style");
+        const src = srcItems[i], [h, t, s] = now[i], [h0, t0, s0] = baselineSnap[i];
+        if (isText(el) && norm(h) !== norm(h0)) src.innerHTML = cleanHTML(el);
+        if (t !== t0) { if (t) src.style.translate = t; else src.style.removeProperty("translate"); }
+        if (s !== s0) { if (s) src.style.scale = s; else src.style.removeProperty("scale"); }
+        if (src.hasAttribute("style") && !src.getAttribute("style")) src.removeAttribute("style");
       });
       // Normalise the ending so repeated publishes don't keep adding blank lines
       const html = "<!doctype html>\n" +
@@ -449,9 +513,10 @@
         sha: file.sha,
         branch: "main",
       });
-      baselineText = items.map((el) => (isText(el) ? norm(cleanHTML(el)) : null));
+      baselineSnap = snapshot();
       publishedSig = signature();
-      message("Published!", "Your changes will be live on martinandfarah.com in about a minute. If you don't see them, wait a couple of minutes and refresh (phones can take up to 10 minutes).");
+      saveDraft();
+      message("Saved & published!", "Your changes will be live on martinandfarah.com in about a minute. If you don't see them, wait a couple of minutes and refresh (phones can take up to 10 minutes).");
     } catch (err) {
       console.error(err);
       if (err.status === 401 || err.status === 403 || err.status === 404) {
