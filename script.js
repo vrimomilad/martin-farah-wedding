@@ -1,6 +1,6 @@
 // Google Apps Script web app that writes RSVPs into the Google Sheet.
 // Filled in after the script is deployed (see apps-script/Code.gs).
-const RSVP_ENDPOINT = "";
+const RSVP_ENDPOINT = "https://script.google.com/macros/s/AKfycbx6n21D7qkMeX8siiLcKdfg0EOXKOhzbyPqpEVT2bfdxsJFT7450NrYGf-EoeJmD8XfVQ/exec";
 
 const EVENT = {
   title: "Martin & Farah · Dinner Reception",
@@ -151,16 +151,27 @@ document.documentElement.classList.add("js");
 
     submitBtn.disabled = true;
     submitBtn.innerHTML = '<span class="spinner" aria-hidden="true"></span><span class="button__text">Sending…</span>';
+    const slowTimer = setTimeout(() => {
+      const label = submitBtn.querySelector(".button__text");
+      if (label) label.textContent = "Almost there…";
+    }, 4000);
 
     try {
       let updated = false;
       if (RSVP_ENDPOINT) {
-        const res = await fetch(RSVP_ENDPOINT, {
-          method: "POST",
-          body: new URLSearchParams(data), // simple request: no CORS preflight
-        });
-        const json = await res.json();
-        if (!json.ok) throw new Error(json.error || "Request failed");
+        // Replies are keyed by email, so retrying a hiccup can't create duplicates
+        const send = async () => {
+          const res = await fetch(RSVP_ENDPOINT, {
+            method: "POST",
+            body: new URLSearchParams(data), // simple request: no CORS preflight
+          });
+          const json = await res.json();
+          if (!json.ok) throw new Error(json.error || "Request failed");
+          return json;
+        };
+        let json;
+        try { json = await send(); }
+        catch (_) { await new Promise((r) => setTimeout(r, 1500)); json = await send(); }
         updated = Boolean(json.updated);
       } else {
         // Local preview before the Google Sheet is connected
@@ -174,6 +185,7 @@ document.documentElement.classList.add("js");
       console.error(err);
       showError("Sorry, something went wrong sending your reply. Please try again in a moment.");
     } finally {
+      clearTimeout(slowTimer);
       submitBtn.disabled = false;
       submitBtn.innerHTML = '<span class="button__text">Submit RSVP</span>';
     }
