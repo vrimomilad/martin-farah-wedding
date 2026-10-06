@@ -1,0 +1,20 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Martin & Farah//Dinner Reception//EN
+CALSCALE:GREGORIAN
+METHOD:PUBLISH
+BEGIN:VEVENT
+UID:martin-farah-dinner-20261212@martinandfarah.com
+DTSTAMP:20261006T000000Z
+DTSTART:20261212T150000Z
+DTEND:20261212T180000Z
+SUMMARY:Martin & Farah · Dinner Reception
+LOCATION:Grand Plaza Hotel Internet City Dubai
+DESCRIPTION:Dinner reception celebrating the marriage of Martin & Farah.\nBytes Restaurant\, 4th Floor\, Grand Plaza Mövenpick Media City.\nValet parking available. Adults-only celebration.\nhttps://martinandfarah.com
+BEGIN:VALARM
+TRIGGER:-P1D
+ACTION:DISPLAY
+DESCRIPTION:Martin & Farah · Dinner Reception tomorrow at 7:00 PM
+END:VALARM
+END:VEVENT
+END:VCALENDAR
