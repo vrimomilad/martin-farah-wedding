@@ -64,6 +64,7 @@ document.documentElement.classList.add("js");
   const form = document.getElementById("rsvp-form");
   const errorBox = document.getElementById("form-error");
   const submitBtn = document.getElementById("submit-btn");
+  const submitLabel = submitBtn.innerHTML; // may be customised in the editor
   const dietaryField = document.getElementById("dietary-field");
   const thanks = document.getElementById("thanks");
   const thanksMsg = document.getElementById("thanks-msg");
@@ -187,7 +188,25 @@ document.documentElement.classList.add("js");
     } finally {
       clearTimeout(slowTimer);
       submitBtn.disabled = false;
-      submitBtn.innerHTML = '<span class="button__text">Submit RSVP</span>';
+      submitBtn.innerHTML = submitLabel;
     }
   });
+})();
+
+// ───────────── Edit mode (martinandfarah.com/#edit) ─────────────
+// Loaded only on demand, so guests never download the editor.
+(() => {
+  const load = () => {
+    if (location.hash !== "#edit" || window.__editorLoading) return;
+    window.__editorLoading = true;
+    const css = document.createElement("link");
+    css.rel = "stylesheet";
+    css.href = "editor.css";
+    document.head.appendChild(css);
+    const js = document.createElement("script");
+    js.src = "editor.js";
+    document.body.appendChild(js);
+  };
+  load();
+  window.addEventListener("hashchange", load);
 })();

@@ -71,13 +71,17 @@ body {
 .card {
   --top-h: 54.6875cqw;     /* 560 / 1024 */
   --bottom-h: 67.96875cqw; /* 696 / 1024 */
+  /* measured so no text touches the florals at any width (keep in sync if content grows) */
+  --clear-top: 44cqw;
+  --clear-bottom: 34cqw;
   position: relative;
   min-height: 150cqw;      /* the original 2:3 proportion */
   display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
-  padding: 24cqw 11cqw 18cqw;
+  /* top/bottom clearances keep text off the corner florals */
+  padding: var(--clear-top, 24cqw) 11cqw var(--clear-bottom, 18cqw);
   background:
     url("assets/bg-top.jpg") top center / 100% var(--top-h) no-repeat,
     url("assets/bg-bottom.jpg") bottom center / 100% var(--bottom-h) no-repeat,
@@ -116,6 +120,8 @@ body {
   align-items: center;
 }
 .script-title__second { margin-top: -0.08em; padding-left: 0.4em; }
+/* Main title is lettering traced from the printed invitation */
+.script-title__art { display: block; width: 74cqw; max-width: none; height: auto; margin: 0.05em 0; }
 .script-title--small { font-size: clamp(50px, 12.5cqw, 74px); }
 
 .caps {
@@ -509,4 +515,11 @@ body {
 /* Keep text crisp where it passes over the florals */
 .eyebrow, .script-title, .rsvp-cta p, .form__deadline {
   text-shadow: 0 0 10px rgba(247, 239, 229, 0.95), 0 0 2px rgba(247, 239, 229, 0.9);
+}
+
+.card--rsvp { --clear-top: 27cqw; --clear-bottom: 34cqw; }
+/* Narrow cards wrap more lines, so the bottom text needs more room above the florals */
+@container (max-width: 429px) {
+  .card { --clear-bottom: 59cqw; }
+  .card--rsvp { --clear-bottom: 48cqw; }
 }
