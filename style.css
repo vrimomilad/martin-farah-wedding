@@ -84,11 +84,21 @@ body {
   text-align: center;
   /* top/bottom clearances keep text off the corner florals */
   padding: var(--clear-top, 24cqw) 11cqw var(--clear-bottom, 18cqw);
-  /* Nothing is stretched: plain satin repeats at its true proportions
-     (bg-mid-tile = bg-mid, flipped and turned copies, soft-blended into a seamless
-     loop) and the floral top/bottom slices fade into it via ::before / ::after */
+  /* Nothing is stretched. Between the floral slices (::before / ::after, true
+     proportions) the satin from inside the frame repeats, enlarged ~2x so its
+     folds are as broad as in the artwork (bg-mid-tile = bg-mid + its 180deg turn,
+     soft-blended into a seamless loop). The frame line and pale border are drawn
+     here, matching the artwork (line at 25-28px of 1024, border to 24px). */
   isolation: isolate;
-  background: url("assets/bg-mid-tile.jpg") center top / 100% auto repeat-y, #f1e6d8;
+  --frame: #b48c62;
+  --border: #f2ede8;
+  background:
+    linear-gradient(var(--border), var(--border)) left top / 2.4cqw 100% no-repeat,
+    linear-gradient(var(--border), var(--border)) right top / 2.4cqw 100% no-repeat,
+    linear-gradient(var(--frame), var(--frame)) 2.45cqw 0 / max(1px, 0.32cqw) 100% no-repeat,
+    linear-gradient(var(--frame), var(--frame)) calc(100% - 2.45cqw) 0 / max(1px, 0.32cqw) 100% no-repeat,
+    url("assets/bg-mid-tile.jpg") center top / 205% auto repeat-y,
+    #e2d0bf;
   box-shadow:
     0 1px 2px rgba(74, 52, 38, 0.08),
     0 18px 50px -12px rgba(74, 52, 38, 0.28);
