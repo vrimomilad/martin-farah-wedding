@@ -21,6 +21,8 @@ body {
   margin: 0;
   min-height: 100vh;
   font-family: var(--serif);
+  /* Cormorant's default old-style "1" reads like a small-caps "I" */
+  font-variant-numeric: lining-nums;
   font-size: 18px;
   line-height: 1.45;
   color: var(--ink);
@@ -82,14 +84,39 @@ body {
   text-align: center;
   /* top/bottom clearances keep text off the corner florals */
   padding: var(--clear-top, 24cqw) 11cqw var(--clear-bottom, 18cqw);
-  background:
-    url("assets/bg-top.jpg") top center / 100% var(--top-h) no-repeat,
-    url("assets/bg-bottom.jpg") bottom center / 100% var(--bottom-h) no-repeat,
-    url("assets/bg-mid.jpg") center var(--top-h) / 100% calc(100% - var(--top-h) - var(--bottom-h) + 2px) no-repeat,
-    #f1e6d8;
+  /* Nothing is stretched: plain satin repeats at its true proportions
+     (bg-mid-tile = bg-mid, flipped and turned copies, soft-blended into a seamless
+     loop) and the floral top/bottom slices fade into it via ::before / ::after */
+  isolation: isolate;
+  background: url("assets/bg-mid-tile.jpg") center top / 100% auto repeat-y, #f1e6d8;
   box-shadow:
     0 1px 2px rgba(74, 52, 38, 0.08),
     0 18px 50px -12px rgba(74, 52, 38, 0.28);
+}
+
+.card::before,
+.card::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  z-index: -1;
+  pointer-events: none;
+}
+/* Both keep the artwork's exact 1024-wide proportions */
+.card::before {
+  top: 0;
+  height: var(--top-h);
+  background: url("assets/bg-top.jpg") center / 100% 100% no-repeat;
+  -webkit-mask-image: linear-gradient(to top, transparent 0, #000 10%);
+  mask-image: linear-gradient(to top, transparent 0, #000 10%);
+}
+.card::after {
+  bottom: 0;
+  height: var(--bottom-h);
+  background: url("assets/bg-bottom.jpg") center / 100% 100% no-repeat;
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 7%);
+  mask-image: linear-gradient(to bottom, transparent 0, #000 7%);
 }
 
 /* Phones: let the invitation fill the screen edge to edge */
@@ -522,4 +549,15 @@ body {
 @container (max-width: 429px) {
   .card { --clear-bottom: 59cqw; }
   .card--rsvp { --clear-bottom: 48cqw; }
+}
+
+/* Planner credit, centred in the plain satin at the foot of the RSVP card */
+.credit-logo {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 10.5cqw;
+  margin-inline: auto;
+  width: clamp(92px, 22cqw, 130px);
+  height: auto;
 }
