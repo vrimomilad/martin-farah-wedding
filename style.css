@@ -84,49 +84,14 @@ body {
   text-align: center;
   /* top/bottom clearances keep text off the corner florals */
   padding: var(--clear-top, 24cqw) 11cqw var(--clear-bottom, 18cqw);
-  /* Nothing is stretched. Between the floral slices (::before / ::after, true
-     proportions) the satin from inside the frame repeats, enlarged ~2x so its
-     folds are as broad as in the artwork (bg-mid-tile = bg-mid + its 180deg turn,
-     soft-blended into a seamless loop). The frame line and pale border are drawn
-     here, matching the artwork (line at 25-28px of 1024, border to 24px). */
-  isolation: isolate;
-  --frame: #b48c62;
-  --border: #f2ede8;
   background:
-    linear-gradient(var(--border), var(--border)) left top / 2.4cqw 100% no-repeat,
-    linear-gradient(var(--border), var(--border)) right top / 2.4cqw 100% no-repeat,
-    linear-gradient(var(--frame), var(--frame)) 2.45cqw 0 / max(1px, 0.32cqw) 100% no-repeat,
-    linear-gradient(var(--frame), var(--frame)) calc(100% - 2.45cqw) 0 / max(1px, 0.32cqw) 100% no-repeat,
-    url("assets/bg-mid-tile.jpg") center top / 205% auto repeat-y,
-    #e2d0bf;
+    url("assets/bg-top.jpg") top center / 100% var(--top-h) no-repeat,
+    url("assets/bg-bottom.jpg") bottom center / 100% var(--bottom-h) no-repeat,
+    url("assets/bg-mid.jpg") center var(--top-h) / 100% calc(100% - var(--top-h) - var(--bottom-h) + 2px) no-repeat,
+    #f1e6d8;
   box-shadow:
     0 1px 2px rgba(74, 52, 38, 0.08),
     0 18px 50px -12px rgba(74, 52, 38, 0.28);
-}
-
-.card::before,
-.card::after {
-  content: "";
-  position: absolute;
-  left: 0;
-  right: 0;
-  z-index: -1;
-  pointer-events: none;
-}
-/* Both keep the artwork's exact 1024-wide proportions */
-.card::before {
-  top: 0;
-  height: var(--top-h);
-  background: url("assets/bg-top.jpg") center / 100% 100% no-repeat;
-  -webkit-mask-image: linear-gradient(to top, transparent 0, #000 10%);
-  mask-image: linear-gradient(to top, transparent 0, #000 10%);
-}
-.card::after {
-  bottom: 0;
-  height: var(--bottom-h);
-  background: url("assets/bg-bottom.jpg") center / 100% 100% no-repeat;
-  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 7%);
-  mask-image: linear-gradient(to bottom, transparent 0, #000 7%);
 }
 
 /* Phones: let the invitation fill the screen edge to edge */
@@ -561,13 +526,12 @@ body {
   .card--rsvp { --clear-bottom: 48cqw; }
 }
 
-/* Planner credit, centred in the plain satin at the foot of the RSVP card */
+/* Planner credit, just under the domain. It shares the domain's editor offset (set
+   inline) and cancels its own height so the card does not grow. */
 .credit-logo {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 10.5cqw;
-  margin-inline: auto;
-  width: clamp(92px, 22cqw, 130px);
+  --logo-w: clamp(124px, 30cqw, 176px);
+  display: block;
+  width: var(--logo-w);
   height: auto;
+  margin: 0.35em auto calc(var(--logo-w) * -0.394 - 0.35em);
 }
