@@ -3,10 +3,10 @@
 const RSVP_ENDPOINT = "https://script.google.com/macros/s/AKfycbx6n21D7qkMeX8siiLcKdfg0EOXKOhzbyPqpEVT2bfdxsJFT7450NrYGf-EoeJmD8XfVQ/exec";
 
 const EVENT = {
-  title: "Martin & Farah · Dinner Reception",
+  title: "Martin & Farah · Dinner",
   location: "Grand Plaza Hotel Internet City Dubai",
   details:
-    "Dinner reception celebrating the marriage of Martin & Farah.\n" +
+    "Dinner celebrating the marriage of Martin & Farah.\n" +
     "Bytes Restaurant, 4th Floor, Grand Plaza Mövenpick Media City.\n" +
     "Valet parking available. Adults-only celebration.\n" +
     "https://martinandfarah.com",

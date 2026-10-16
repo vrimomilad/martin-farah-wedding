@@ -123,7 +123,7 @@ body {
 }
 .script-title__second { margin-top: -0.08em; padding-left: 0.4em; }
 /* Main title is lettering traced from the printed invitation */
-.script-title__art { display: block; width: 74cqw; max-width: none; height: auto; margin: 0.05em 0; }
+.script-title__art { display: block; width: 58cqw; max-width: none; height: auto; margin: 0.05em 0; }
 .script-title--small { font-size: clamp(50px, 12.5cqw, 74px); }
 
 .caps {
