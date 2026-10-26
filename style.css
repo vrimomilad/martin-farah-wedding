@@ -473,6 +473,10 @@ body {
   flex-direction: column;
   align-items: center;
   margin-top: 0.4em;
+  /* Sits where the form sits (moved up -20.74cqw), leaving room for the
+     domain line below it (moved up -24.56cqw) */
+  translate: 0 -20.74cqw;
+  margin-bottom: 7cqw;
   outline: none;
   animation: rise 500ms var(--ease-out) both;
 }
